@@ -2,13 +2,14 @@
 
 A simple Python package which can be used to call Jetson's csi camera. Key features include:
 
+- Simple to directly call csi camera for Jetson.
 - Pure opencv-python code, easy to modify.
 - Performance optimized. Low cost on Jetson Nano!
-- **Live-streaming** mode (See below “Why Live-streaming” for details)
+- ⭐ For some cameras **having fixed frame buffer size** (and we cannot modify it), causing latency, our **Live-streaming** mode can help! (See below “Why Live-streaming” for details)
 
 ## Why Live-streaming?
 
-It is suitable for the cases that camera has a frame buffer, and our image processing time is long. For example, we need to get frames from camera, and then, we process it. The frame interval is 0.03s, but the image processing is slower (e.g., 0.25s). We shot to the stopwatch for a demonstration.
+Live-streaming is especially suitable for the cases that camera has a fixed long frame buffer, and our image processing time is longer than the capture time interval. For example, we need to get frames from camera, and then, we process it. The frame interval is 0.03s, but the image processing is slower (e.g., 0.25s). We shot to a stopwatch for demonstration.
 
 ```python
 camera = cv2.VideoCapture('<jetson id>')
@@ -28,13 +29,13 @@ The camera does not perform what we want. There are two interesting facts:
 1. At the beginning, the buffer is not full. The 2nd to 12th frame is reading consecutively the oldest frame in the buffer. It’s not what we want, about 0.25s to each other.
 2. Later, the buffer overflows. In that case, the latest frame is appended at the end of the buffer. When we call `read()`, we are reading the front most (oldest frame) in the buffer, but not what is currently going on (latest, at the end of the buffer).
 
-Some people may say `cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)` could solve this problem. But at least for my camera, it does not support this. We need find other solutions:
+Some people may say `cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)` could solve this problem. But at least for my camera, it does not support this. This package offers a solution:
 
 - With our `jetson-csicam`:
 
 <img src="imgs/tiled_live.jpg" alt="tiled_live" style="zoom:50%;" />
 
-Our code will continuously flush the unused buffer, and make the latest frame at the beginning of the buffer. In that case, every time when we call `read()`, we are always fetching the latest frame. There are no latency anymore.
+Our code will continuously flush the unused buffer, and make the latest frame at the beginning of the buffer. In that case, every time when we call `read()`, we are always fetching the latest frame. As you can see, the shot interval is around 0.25 sec. There are no latency anymore.
 
 ## Install
 
