@@ -8,4 +8,5 @@ setup(
     author="i-am-future",
     author_email="3038242641@qq.com",
     packages=['mycamcap'],
+    install_requires=['opencv-python'],
 )
