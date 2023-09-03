@@ -9,7 +9,7 @@ class CameraCapture:
         self._width = width
         self._height = height
         self._fps = fps
-        self.running = False
+        self.live_ing = False
 
     def _gst_str(self):
         ''' Return a parameter string. Referenced from https://github.com/NVIDIA-AI-IOT/jetcam'''
@@ -18,7 +18,7 @@ class CameraCapture:
 
     def Live_start(self):
         ''' Init the camera with live read (read the latest frame) mode. '''
-        self.running = True
+        self.live_ing = True
 
         self.cap = cv2.VideoCapture(self._gst_str(), cv2.CAP_GSTREAMER)
         if not self.cap.isOpened():
@@ -29,7 +29,7 @@ class CameraCapture:
         self.capture_thread.start()
 
     def _capture_frames(self):   
-        while self.running:
+        while self.live_ing:
             # Use grab() to capture the next frame (non-blocking)
             success = self.cap.grab()
             if not success:
@@ -39,7 +39,7 @@ class CameraCapture:
         
     def Live_stop(self):
         ''' Stop the camera with live read mode.'''
-        self.running = False
+        self.live_ing = False
         self.capture_thread.join()
         self.cap.release()
         delattr(self, 'cap')
@@ -48,7 +48,7 @@ class CameraCapture:
         ''' Live-read frames. It will get the **latest** frame. 
             Require calling after `Live_start`. 
         '''
-        if not self.running:
+        if not self.live_ing:
             raise Exception('`Live_read` should be called after camera.Live_start()!!!')
 
         # Use retrieve() to decode and retrieve the last grabbed frame
@@ -65,7 +65,7 @@ class CameraCapture:
             Note that read will just fetch one **oldest frame** in the buffer. The buffer may
             overflow. If you want to get the newest frame, consider use `Live_read`. 
         '''
-        if self.running:
+        if self.live_ing:
             raise Exception('Cannot call `sync_read` in async mode. ')
         if not hasattr(self, 'cap'):
             self.cap = cv2.VideoCapture(self._gst_str(), cv2.CAP_GSTREAMER)
@@ -78,9 +78,8 @@ class CameraCapture:
 
     def self_check(self):
         ''' Check if the camera can retrieve images correctly '''
-        self.cap = cv2.VideoCapture(self._gst_str(), cv2.CAP_GSTREAMER)
         for _ in range(10):
-            ret, _ = self.cap.read()
+            ret, _ = self.Buffer_read()
             if ret:
                 print('[SELF CHECK] : Self check succeed!')
                 self.Buffer_stop()
